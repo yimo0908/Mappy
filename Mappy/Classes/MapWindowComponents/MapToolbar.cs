@@ -16,6 +16,9 @@ namespace Mappy.Classes.MapWindowComponents;
 
 public unsafe class MapToolbar
 {
+    private bool wasFollowingPlayer;
+    private bool wasWindowLocked;
+    
     public void Draw()
     {
         var toolbarSize = new Vector2(ImGui.GetContentRegionMax().X, 33.0f * ImGuiHelpers.GlobalScale);
@@ -106,19 +109,24 @@ public unsafe class MapToolbar
         
         ImGui.SameLine();
 
-        var xpndIcon = System.MapWindow.isTempSize ? FontAwesomeIcon.Compress : FontAwesomeIcon.Expand;
+        var xpndIcon = System.MapWindow.IsTempSize ? FontAwesomeIcon.Compress : FontAwesomeIcon.Expand;
         if (MappyGuiTweaks.IconButton(xpndIcon, "toggleSize", "切换大小"))
         {
-            System.MapWindow.isTempSize = !System.MapWindow.isTempSize;
-
-            if (System.MapWindow.isTempSize)
+            System.MapWindow.IsTempSize = !System.MapWindow.IsTempSize;
+            System.MapWindow.SizeApplied = false;
+            
+            if (System.MapWindow.IsTempSize)
             {
+                wasFollowingPlayer = System.SystemConfig.FollowPlayer;
                 System.SystemConfig.FollowPlayer = false;
                 System.MapRenderer.DrawOffset = Vector2.Zero;
+                wasWindowLocked = System.SystemConfig.LockWindow;
+                System.SystemConfig.LockWindow = true;
             }
             else
             {
-                System.SystemConfig.FollowPlayer = true;
+                if (!wasWindowLocked) System.SystemConfig.LockWindow = false;
+                if (wasFollowingPlayer) System.SystemConfig.FollowPlayer = true;
             }
         }
         

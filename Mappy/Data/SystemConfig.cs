@@ -113,6 +113,8 @@ public class SystemConfig : CharacterConfiguration
     public float WindowBgFadePercent = 0.30f;
     public int AnchorPoint = 3;
     public Vector2 ToggledWindowSize = new(500f, 500f);
+    public Vector2 ToggledWindowPos = new(1024.0f, 700.0f);
+    public bool UseToggledPos = true;
 
     // Do not persist this setting
     [JsonIgnore]

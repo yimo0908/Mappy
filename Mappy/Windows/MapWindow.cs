@@ -25,14 +25,15 @@ public class MapWindow : Window
     public Vector2 MapDrawOffset { get; private set; }
     public HoverFlags HoveredFlags { get; private set; }
     public bool ProcessingCommand { get; set; }
-    public bool isTempSize { get; set; }
+    public bool IsTempSize { get; set; }
+    public bool SizeApplied { get; set; } = true;
+    public bool AnchorChangeApplied { get; set; } = true;
 
     private bool isDragStarted;
     private Vector2 lastWindowSize;
     private uint lastMapId;
     private uint lastAreaPlaceNameId;
     private uint lastSubAreaPlaceNameId;
-
 
     private readonly MapToolbar mapToolbar = new();
     private readonly MapCoordinateBar mapCoordinateBar = new();
@@ -288,16 +289,23 @@ public class MapWindow : Window
         }
     }
 
-    private void UpdateSizePosition()
+    private void UpdateSizePosition() 
     {
         var systemConfig = System.SystemConfig;
-        var sizeConfig = isTempSize ? systemConfig.ToggledWindowSize : systemConfig.WindowSize;
+        var sizeConfig = IsTempSize ? systemConfig.ToggledWindowSize : systemConfig.WindowSize;
         var convertedWindowPosConfig = systemConfig.AnchorPoint switch
         {
                 0 => systemConfig.WindowPosition,
                 1 => systemConfig.WindowPosition - sizeConfig with { Y = 0 },
                 2 => systemConfig.WindowPosition - sizeConfig with { X = 0 },
                 _ => systemConfig.WindowPosition - sizeConfig,
+        };
+        var convertedToggledWindowPosConfig = systemConfig.AnchorPoint switch
+        {
+                0 => systemConfig.ToggledWindowPos,
+                1 => systemConfig.ToggledWindowPos - sizeConfig with { Y = 0 },
+                2 => systemConfig.ToggledWindowPos - sizeConfig with { X = 0 },
+                _ => systemConfig.ToggledWindowPos - sizeConfig,
         };
         var windowPosition = ImGui.GetWindowPos();
         var convertedWindowPos = systemConfig.AnchorPoint switch
@@ -309,27 +317,45 @@ public class MapWindow : Window
         };
         var windowSize = ImGui.GetWindowSize();
 
-        //if (!IsFocused) {
-        if (windowPosition != convertedWindowPosConfig) {
-            ImGui.SetWindowPos(convertedWindowPosConfig);
-        }
+        if (!IsFocused || IsTempSize || !SizeApplied) {
+            if (!AnchorChangeApplied)
+            {
+                systemConfig.WindowPosition = convertedWindowPos;
+                SystemConfig.Save();
+            }
+            if (!IsTempSize || !systemConfig.UseToggledPos)
+            {
+                if (windowPosition != convertedWindowPosConfig) {
+                    ImGui.SetWindowPos(convertedWindowPosConfig);
+                }
+            }
+            else
+            {
+                if (windowPosition != convertedToggledWindowPosConfig)
+                {
+                    ImGui.SetWindowPos(convertedToggledWindowPosConfig);
+                }
+            }
 
-        if (windowSize != sizeConfig) {
-            ImGui.SetWindowSize(sizeConfig);
+            if (windowSize != sizeConfig) {
+                ImGui.SetWindowSize(sizeConfig);
+            }
+
+            SizeApplied = true;
+            AnchorChangeApplied = true;
         }
-        
-/*        else {
-            // If focused
+        else {
+            // If focused and not expanded
             if (systemConfig.WindowPosition != convertedWindowPos) {
                 systemConfig.WindowPosition = convertedWindowPos;
                 SystemConfig.Save();
             }
 
-            if (sizeConfig != windowSize) {
+            if (systemConfig.WindowSize != windowSize) {
                 systemConfig.WindowSize = windowSize;
                 SystemConfig.Save();
             }
-        }*/
+        }
     }
 
     private static void DrawSpoilerWarning()
