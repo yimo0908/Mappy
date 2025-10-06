@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Numerics;
@@ -156,6 +157,13 @@ public class StyleOptionsTab : ITabItem
     public void Draw()
     {
         var configChanged = false;
+        List<AnchorPoint> comboList =
+        [
+                AnchorPoint.UpperLeft,
+                AnchorPoint.UpperRight,
+                AnchorPoint.LowerLeft, 
+                AnchorPoint.LowerRight, 
+        ];
 
         ImGuiTweaks.Header("窗口选项");
         using (ImRaii.PushIndent()) {
@@ -186,6 +194,22 @@ public class StyleOptionsTab : ITabItem
         using (ImRaii.PushIndent()) {
             configChanged |= ImGui.DragFloat2("窗口位置", ref System.SystemConfig.WindowPosition);
             configChanged |= ImGui.DragFloat2("窗口尺寸", ref System.SystemConfig.WindowSize);
+            configChanged |= ImGui.DragFloat2("最大化窗口尺寸", ref System.SystemConfig.ToggledWindowSize);
+            configChanged |= ImGui.DragFloat2("最大化窗口位置", ref System.SystemConfig.ToggledWindowPos);
+            configChanged |= ImGuiComponents.ToggleButton("UseToggledPos",
+                                                          ref System.SystemConfig.UseToggledPos);
+            ImGui.SameLine();
+            ImGui.TextUnformatted("最大化窗口使用固定位置");
+            ImGui.SameLine();
+            ImGui.TextDisabled("(?)");
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetTooltip("如果不使用固定位置，则会以小窗口设定的锚点为基础缩放。");
+            }
+            
+            var anchorChanged = ImGui.Combo("锚点位置", ref System.SystemConfig.AnchorPoint, comboList, point => point.GetDescription());
+            System.MapWindow.AnchorChangeApplied = !anchorChanged;
+            configChanged |= anchorChanged;
         }
 
         ImGuiTweaks.Header("淡化选项");
